@@ -34,7 +34,7 @@ services:
         command:
             - web
             - --rpc
-            - ${RPC_URL:-http://host.docker.internal:26657}
+            - ${RPC_URL:-http://gnoland:26657}
             - --container
             - ${GNOLAND_CONTAINER:-gnoland}
             - --data-dir
@@ -51,6 +51,9 @@ services:
             - '${MISSED_BLOCKS_PCT:-5}'
             - --notify
             - '${NOTIFY_URLS:-}'
+        networks:
+            - default
+            - gnoland
         restart: unless-stopped
         logging:
             driver: json-file
@@ -78,3 +81,8 @@ services:
 volumes:
     gnockpit-data:
     signal-data:
+
+networks:
+    gnoland:
+        name: ${GNOLAND_NETWORK:-gno-validator_default}
+        external: true
