@@ -1,0 +1,80 @@
+name: gnockpit
+
+services:
+    gnockpit:
+        build:
+            context: ${GNOCKPIT_CONTEXT:-https://github.com/gnoverse/gnockpit.git#main}
+            dockerfile_inline: |
+                FROM golang:1.25-alpine AS builder
+                WORKDIR /app
+                COPY go.mod go.sum ./
+                RUN --mount=type=cache,target=/go/pkg/mod go mod download
+                COPY . .
+                RUN --mount=type=cache,target=/go/pkg/mod \
+                    --mount=type=cache,target=/root/.cache/go-build \
+                    CGO_ENABLED=0 go build \
+                      -ldflags="-s -w" \
+                      -o /gnockpit .
+                FROM alpine:3
+                RUN apk add --no-cache ca-certificates docker-cli
+                COPY --from=builder /gnockpit /usr/local/bin/gnockpit
+                EXPOSE 8080
+                ENTRYPOINT ["gnockpit"]
+                CMD ["web"]
+        image: gnockpit:local
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ${GNOLAND_DATA_DIR:-./gnoland-data}:/gnoland-data:ro
+            - ${GENESIS_PATH:-./gnoland-data/genesis.json}:/genesis.json:ro
+            - gnockpit-data:/data
+        ports:
+            - '${GNOCKPIT_LADDR:-0.0.0.0}:${GNOCKPIT_PORT:-8080}:8080'
+        command:
+            - web
+            - --rpc
+            - ${RPC_URL:-http://host.docker.internal:26657}
+            - --container
+            - ${GNOLAND_CONTAINER:-gnoland}
+            - --data-dir
+            - /gnoland-data
+            - --genesis
+            - /genesis.json
+            - --names
+            - /data/names.json
+            - --db-path
+            - /data/gnockpit.db
+            - --chain-stuck-secs
+            - '${CHAIN_STUCK_SECS:-30}'
+            - --missed-blocks-pct
+            - '${MISSED_BLOCKS_PCT:-5}'
+            - --notify
+            - '${NOTIFY_URLS:-}'
+        restart: unless-stopped
+        logging:
+            driver: json-file
+            options:
+                max-size: 100m
+                max-file: '1'
+
+    signal-api:
+        image: bbernhard/signal-cli-rest-api:latest
+        environment:
+            - MODE=normal
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        volumes:
+            - signal-data:/home/.local/share/signal-cli
+        ports:
+            - '${SIGNAL_API_LADDR:-127.0.0.1}:${SIGNAL_API_PORT:-8081}:8080'
+        restart: unless-stopped
+        logging:
+            driver: json-file
+            options:
+                max-size: 100m
+                max-file: '1'
+
+volumes:
+    gnockpit-data:
+    signal-data:
