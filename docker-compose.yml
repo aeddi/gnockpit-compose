@@ -80,29 +80,9 @@ services:
 
     signal-relay:
         image: python:3-alpine
-        command: ["python3", "-u", "-c", "
-import http.server, json, urllib.request, urllib.error, sys
-
-class Handler(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        data = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        if isinstance(data.get('recipients'), str):
-            data['recipients'] = [data['recipients']]
-        req = urllib.request.Request('http://signal-api:8080/v2/send', json.dumps(data).encode(), {'Content-Type': 'application/json'})
-        try:
-            resp = urllib.request.urlopen(req)
-            body = resp.read()
-            self.send_response(resp.status)
-        except urllib.error.HTTPError as e:
-            body = e.read()
-            self.send_response(e.code)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-        self.wfile.write(body)
-
-print('signal-relay listening on :8082', flush=True)
-http.server.HTTPServer(('', 8082), Handler).serve_forever()
-"]
+        command: ["python3", "-u", "/app/relay.py"]
+        volumes:
+            - ./signal-relay.py:/app/relay.py:ro
         depends_on:
             - signal-api
         restart: unless-stopped
