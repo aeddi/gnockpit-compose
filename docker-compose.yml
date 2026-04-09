@@ -51,6 +51,8 @@ services:
             - '${MISSED_BLOCKS_PCT:-5}'
             - --notify
             - '${NOTIFY_URLS:-}'
+            - --public-url
+            - '${PUBLIC_URL:-}'
         networks:
             - default
             - gnoland
