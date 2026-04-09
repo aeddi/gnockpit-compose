@@ -1,3 +1,4 @@
 .env
 .ignore/
 gnockpit-src/
+gnockpit-data/

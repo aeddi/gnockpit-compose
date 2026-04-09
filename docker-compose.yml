@@ -28,7 +28,7 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ${GNOLAND_DATA_DIR:-./gnoland-data}:/gnoland-data:ro
             - ${GENESIS_PATH:-./gnoland-data/genesis.json}:/genesis.json:ro
-            - gnockpit-data:/data
+            - ./gnockpit-data:/data
         ports:
             - '${GNOCKPIT_LADDR:-0.0.0.0}:${GNOCKPIT_PORT:-8080}:8080'
         command:
@@ -42,7 +42,7 @@ services:
             - --genesis
             - /genesis.json
             - --names
-            - /data/names.json
+            - /data/gnockpit-names.json
             - --db-path
             - /data/gnockpit.db
             - --chain-stuck-secs
@@ -95,7 +95,6 @@ services:
                 max-file: '1'
 
 volumes:
-    gnockpit-data:
     signal-data:
 
 networks:
